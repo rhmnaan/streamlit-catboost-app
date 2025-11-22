@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from catboost import CatBoostClassifier
-import shap
 import seaborn as sns
+import shap
 import matplotlib.pyplot as plt
 
 # ==========================
@@ -53,8 +53,9 @@ def load_model():
 
 model = load_model()
 
+
 # ==========================
-# HALAMAN UTAMA (MULTIPAGE)
+# MENU
 # ==========================
 menu = st.sidebar.radio(
     "Navigasi",
@@ -62,58 +63,82 @@ menu = st.sidebar.radio(
 )
 
 # =====================================================================
-# 🏠 HOME
+# HOME
 # =====================================================================
 if menu == "🏠 Home":
-    st.markdown('<div class="main-title">🚀 Spaceship Titanic – CatBoost Prediction App</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🚀 Spaceship Titanic – CatBoost Prediction App</div>', 
+                 unsafe_allow_html=True)
 
     st.markdown("""
-    ### Selamat datang di aplikasi prediksi **Spaceship Titanic**  
-    Aplikasi ini dibangun menggunakan **Streamlit** dan **CatBoostClassifier** dengan fitur:
-    - Prediksi data **satuan**
-    - Prediksi **banyak data (CSV)**
-    - Visualisasi distribusi fitur
-    - **SHAP interpretation** untuk menjelaskan model
-    - Pairplot, heatmap, dan grafik data lainnya  
+    ### Aplikasi prediksi Spaceship Titanic menggunakan CatBoost  
+    Fitur:
+    - Prediksi manual
+    - Prediksi via CSV
+    - Analisis dataset
+    - SHAP model interpretation
     """)
 
 # =====================================================================
-# 🧍 PREDIKSI MANUAL
+# 🧍 PREDIKSI MANUAL (INPUT SESUAI PERMINTAAN)
 # =====================================================================
 elif menu == "🧍 Prediksi Manual":
     st.markdown('<div class="main-title">🧍 Prediksi Penumpang (Input Manual)</div>', unsafe_allow_html=True)
-    st.write("Masukkan data di bawah untuk memprediksi apakah penumpang *Transported* atau tidak.")
+    st.write("Masukkan data sesuai input berikut:")
 
-    with st.container():
-        with st.form("manual_form"):
-            col1, col2 = st.columns(2)
+    with st.form("manual_form"):
+        col1, col2 = st.columns(2)
 
-            with col1:
-                CryoSleep = st.selectbox("CryoSleep", [0, 1])
-                VIP = st.selectbox("VIP", [0, 1])
-                RoomService = st.number_input("RoomService", 0, 20000, 0)
-                FoodCourt = st.number_input("FoodCourt", 0, 20000, 0)
+        with col1:
+            HomePlanet = st.selectbox("HomePlanet", ["Earth", "Mars", "Europa"])
+            CryoSleep = st.selectbox("CryoSleep", ["True", "False"])
+            Cabin = st.text_input("Cabin (misal B/0/P)")
+            Destination = st.selectbox("Destination", [
+                "TRAPPIST-1e",
+                "55 Cancri e",
+                "PSO J318.5-22"
+            ])
+            Age = st.number_input("Age", min_value=0.0, max_value=100.0, value=30.0)
 
-            with col2:
-                ShoppingMall = st.number_input("ShoppingMall", 0, 20000, 0)
-                Spa = st.number_input("Spa", 0, 20000, 0)
-                VRDeck = st.number_input("VRDeck", 0, 20000, 0)
+        with col2:
+            VIP = st.selectbox("VIP", ["True", "False"])
+            RoomService = st.number_input("RoomService", min_value=0.0, value=0.0)
+            FoodCourt = st.number_input("FoodCourt", min_value=0.0, value=0.0)
+            ShoppingMall = st.number_input("ShoppingMall", min_value=0.0, value=0.0)
+            Spa = st.number_input("Spa", min_value=0.0, value=0.0)
+            VRDeck = st.number_input("VRDeck", min_value=0.0, value=0.0)
 
-            submitted = st.form_submit_button("Prediksi 🚀")
+        submitted = st.form_submit_button("Prediksi 🚀")
 
     if submitted:
+
+        # UBAH BOOLEAN KE FORMAT ASLI
+        CryoSleep_bool = True if CryoSleep == "True" else False
+        VIP_bool = True if VIP == "True" else False
+
+        # ==== SESUAIKAN DENGAN KOLOM TRAINING MODEL ====
         input_df = pd.DataFrame([{
-            "CryoSleep": CryoSleep,
-            "VIP": VIP,
+            "HomePlanet": HomePlanet,
+            "CryoSleep": CryoSleep_bool,
+            "Cabin": Cabin,
+            "Destination": Destination,
+            "Age": Age,
+            "VIP": VIP_bool,
             "RoomService": RoomService,
             "FoodCourt": FoodCourt,
             "ShoppingMall": ShoppingMall,
             "Spa": Spa,
-            "VRDeck": VRDeck,
+            "VRDeck": VRDeck
         }])
 
-        pred = model.predict(input_df)[0]
-        st.success(f"Hasil Prediksi: **{bool(pred)}**")
+        # ========== PREDIKSI ==========
+        try:
+            pred = model.predict(input_df)[0]
+            st.success(f"🚀 Hasil Prediksi: **{bool(pred)}**")
+
+        except Exception as e:
+            st.error("❌ Error pada prediksi. Periksa kolom dan tipe data.")
+            st.code(str(e))
+
 
 # =====================================================================
 # 📁 PREDIKSI CSV
@@ -128,14 +153,19 @@ elif menu == "📁 Prediksi File CSV":
         st.write("### Data yang diupload")
         st.dataframe(df.head())
 
-        preds = model.predict(df)
-        df["Transported"] = preds.astype(bool)
+        try:
+            preds = model.predict(df)
+            df["Transported"] = preds.astype(bool)
 
-        st.write("### Hasil Prediksi")
-        st.dataframe(df)
+            st.write("### Hasil Prediksi")
+            st.dataframe(df)
 
-        csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("Download Hasil CSV", csv, "prediction_output.csv")
+            csv = df.to_csv(index=False).encode("utf-8")
+            st.download_button("Download Hasil CSV", csv, "prediction_output.csv")
+
+        except Exception as e:
+            st.error("❌ Error pada prediksi CSV.")
+            st.code(str(e))
 
 # =====================================================================
 # 📊 ANALISIS DATA
@@ -143,44 +173,27 @@ elif menu == "📁 Prediksi File CSV":
 elif menu == "📊 Analisis Data":
     st.markdown('<div class="main-title">📊 Analisis Data & SHAP Interpretation</div>', unsafe_allow_html=True)
 
-    file = st.file_uploader("Upload dataset untuk analisis", type=["csv"])
+    file = st.file_uploader("Upload dataset", type=["csv"])
 
     if file:
         df = pd.read_csv(file)
-        st.write("### Data")
         st.dataframe(df.head())
 
-        # ---- Distribusi ---
-        st.subheader("📌 Distribusi Fitur Numerik")
-        num_cols = df.select_dtypes(include=np.number).columns
-        
-        fig, ax = plt.subplots(figsize=(12, 5))
-        df[num_cols].hist(ax=ax)
-        st.pyplot(fig)
-
-        # ---- Heatmap ---
+        # ========== Heatmap ==========
         st.subheader("📌 Correlation Heatmap")
+        num_cols = df.select_dtypes(include=np.number).columns
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.heatmap(df[num_cols].corr(), annot=False, ax=ax)
+        sns.heatmap(df[num_cols].corr(), ax=ax)
         st.pyplot(fig)
 
-        # ---- Pairplot ---
-        st.subheader("📌 Pairplot (Sampel 200 Data)")
-        if st.checkbox("Tampilkan pairplot"):
-            st.info("Pairplot bisa lambat pada dataset besar.")
-            sample = df.sample(min(200, len(df)))
-            fig = sns.pairplot(sample[num_cols])
-            st.pyplot(fig)
-
-        # ---- SHAP ---
-        st.subheader("📌 SHAP Model Interpretation")
+        # ========== SHAP ==========
+        st.subheader("📌 SHAP Values")
 
         explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(df[num_cols].head(100))
+        shap_values = explainer(df[num_cols].fillna(0).head(100))
 
-        st.write("### SHAP Summary Plot")
-        fig = shap.summary_plot(shap_values, df[num_cols].head(100), show=False)
-        st.pyplot(bbox_inches='tight')
+        fig = shap.summary_plot(shap_values.values, df[num_cols].head(100), show=False)
+        st.pyplot(bbox_inches="tight")
 
 # =====================================================================
 # 📘 DOKUMENTASI
@@ -188,17 +201,18 @@ elif menu == "📊 Analisis Data":
 elif menu == "📘 Dokumentasi Model":
     st.markdown('<div class="main-title">📘 Dokumentasi Model CatBoost</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-    ### Model yang digunakan:
-    - **CatBoostClassifier**
-    - Optimized untuk dataset **Spaceship Titanic**
-    - Mampu menangani data numerik & kategorikal
-    - Mendukung interpretasi via **SHAP values**
-
-    ### Fitur Aplikasi:
-    - Prediksi penumpang (manual & CSV)
-    - Heatmap, distribusi, histogram
-    - Pairplot
-    - SHAP Interpretation
+    st.write("""
+    Model CatBoost dilatih dengan fitur:
+    - HomePlanet
+    - CryoSleep
+    - Cabin
+    - Destination
+    - Age
+    - VIP
+    - RoomService
+    - FoodCourt
+    - ShoppingMall
+    - Spa
+    - VRDeck
     """)
 
