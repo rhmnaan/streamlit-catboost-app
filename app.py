@@ -260,16 +260,22 @@ elif page == "Prediksi":
         # Example form fields — diperluas agar tidak missing common features (Spa, VRDeck, dll.)
         with st.form(key='manual_form'):
             colA, colB, colC = st.columns(3)
+
             with colA:
                 HomePlanet = st.selectbox('HomePlanet', ['Earth','Europa','Mars','missing'])
                 CryoSleep = st.selectbox('CryoSleep', ['True','False','missing'])
-                Cabin = st.text_input('Cabin (as string)', value='B/0/0')
-                Deck = st.text_input('Deck (optional)', value='')
+                Cabin = st.text_input('Cabin', value='B/0/0')   # Deck & Side tidak digunakan
+
             with colB:
-                Destination = st.selectbox('Destination', ['TRAPPIST-1e','PSO J318.5-22','55 Cancri e','missing'])
+                Destination = st.selectbox('Destination', [
+                    'TRAPPIST-1e',
+                    'PSO J318.5-22',
+                    '55 Cancri e',
+                    'missing'
+                ])
                 Age = st.number_input('Age', min_value=0.0, max_value=120.0, value=30.0)
                 VIP = st.selectbox('VIP', ['True','False','missing'])
-                Side = st.text_input('Side (optional)', value='')
+
             with colC:
                 RoomService = st.number_input('RoomService', min_value=0.0, value=0.0)
                 FoodCourt = st.number_input('FoodCourt', min_value=0.0, value=0.0)
@@ -285,17 +291,16 @@ elif page == "Prediksi":
                 'HomePlanet': HomePlanet,
                 'CryoSleep': CryoSleep,
                 'Cabin': Cabin,
-                'Deck': Deck,
                 'Destination': Destination,
                 'Age': Age,
                 'VIP': VIP,
-                'Side': Side,
                 'RoomService': RoomService,
                 'FoodCourt': FoodCourt,
                 'ShoppingMall': ShoppingMall,
                 'Spa': Spa,
                 'VRDeck': VRDeck
             }])
+
 
             st.write('Preview input:')
             st.dataframe(df_manual)
