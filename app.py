@@ -6,52 +6,84 @@ from catboost import CatBoostClassifier
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 
-# ---------------------------
-# App config & Premium Styling
-# ---------------------------
-st.set_page_config(page_title="CatBoost - Spaceship Titanic", layout="wide")
+# -------------------------------------------------------------------
+# APP CONFIG + PREMIUM DARK MODE
+# -------------------------------------------------------------------
+st.set_page_config(page_title="CatBoost Spaceship Titanic", layout="wide")
 
 def load_custom_css():
     st.markdown("""
     <style>
+
+    /* GLOBAL COLOR VARIABLES */
     :root { 
         --bg: #0d1117; 
         --card: #161b22; 
+        --card-hover: #1c2330;
         --text: #e6edf3; 
         --muted: #8b949e; 
-        --accent: #58a6ff; 
+        --accent: #58a6ff;
     }
+
     .stApp { background-color: var(--bg); color: var(--text); }
 
-    .card {
-        background: var(--card); 
-        padding: 20px; 
-        border-radius: 14px; 
-        box-shadow: 0 8px 22px rgba(0,0,0,0.55);
-        border: 1px solid #21262d;
-    }
+    /* HEADER STYLE */
     .header {
-        background: linear-gradient(90deg,#4c6ef5,#364fc7);
+        background: linear-gradient(90deg, #3b82f6, #1e40af);
         padding: 18px; 
-        border-radius: 12px; 
+        border-radius: 14px; 
         color: white; 
         font-weight: 700; 
-        font-size: 22px;
+        text-align: left;
+        font-size: 23px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+        margin-bottom: 20px;
     }
+
+    /* CARD STYLE */
+    .card {
+        background: var(--card); 
+        padding: 22px; 
+        border-radius: 16px; 
+        border: 1px solid #21262d;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+        transition: all 0.2s ease;
+    }
+    .card:hover {
+        background: var(--card-hover);
+        box-shadow: 0 14px 32px rgba(0,0,0,0.55);
+    }
+
+    /* SECTION TITLE */
     .section-title {
         color: var(--accent);
         font-weight: 600;
-        margin-bottom: 10px;
         font-size: 18px;
+        margin-bottom: 10px;
     }
+
+    /* SIDEBAR */
+    .css-1d391kg, .css-1lcbmhc {
+        background-color: #11161d !important;
+        border-right: 1px solid #1f2937 !important;
+        color: var(--text) !important;
+    }
+
+    .sidebar-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--accent);
+        padding-bottom: 10px;
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
 load_custom_css()
 
-# --------------------------------------------------------
-# Helper Functions
-# --------------------------------------------------------
+# -------------------------------------------------------------------
+# HELPER FUNCTIONS
+# -------------------------------------------------------------------
 MODEL_PATH = "catboost_high_accuracy.cbm"
 
 @st.cache_resource
@@ -64,6 +96,7 @@ def load_model(path=MODEL_PATH):
 
 def simple_preprocess(df: pd.DataFrame):
     df_proc = df.copy()
+
     df_proc.columns = df_proc.columns.str.strip()
 
     for c in df_proc.select_dtypes(include=[np.number]).columns:
@@ -99,9 +132,9 @@ def align_features(df, model):
 
     return df[expected]
 
-# --------------------------------------------------------
-# Load Model
-# --------------------------------------------------------
+# -------------------------------------------------------------------
+# LOAD MODEL
+# -------------------------------------------------------------------
 try:
     model = load_model()
     model_loaded = True
@@ -109,48 +142,45 @@ except Exception as e:
     model_loaded = False
     model_error = str(e)
 
-# --------------------------------------------------------
-# Sidebar Navigation
-# --------------------------------------------------------
-st.sidebar.markdown("## ⚙️ Menu Navigasi")
+# -------------------------------------------------------------------
+# SIDEBAR NAVIGATION
+# -------------------------------------------------------------------
+st.sidebar.markdown("<div class='sidebar-title'>⚙️ Menu Navigasi</div>", unsafe_allow_html=True)
+
 page = st.sidebar.radio("Pilih Halaman:", 
                         ["Home", "Prediksi", "Analisis Data", "Dokumentasi / About"])
 
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 # HOME PAGE
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 if page == "Home":
     st.markdown('<div class="header">🚀 CatBoost Spaceship Titanic</div>', unsafe_allow_html=True)
-    st.write("---")
 
     st.markdown("""
-    ## 💡 Tentang Project Ini  
-    Project ini dibuat untuk memprediksi apakah penumpang Spaceship Titanic  
-    akan **Transported** (dipindahkan ke dimensi lain) menggunakan model **CatBoost**.
+    ### 👋 Selamat datang di Dashboard Premium  
+    Aplikasi ini menggunakan model **CatBoost** berakurasi tinggi untuk memprediksi  
+    apakah penumpang *Spaceship Titanic* akan **Transported**.
 
-    ### ✨ Fitur Utama  
-    - Prediksi manual  
-    - Prediksi banyak data via CSV  
-    - Analisis data otomatis  
-    - Tampilan premium dan modern  
+    ---
+    #### ✨ Apa yang bisa kamu lakukan?
+    - Melakukan prediksi dari satu data penumpang  
+    - Melakukan prediksi massal dari file CSV  
+    - Melihat analisis data  
+    - Menjelajah dokumentasi
 
-    Aplikasi cocok untuk:  
-    - Tugas kuliah  
-    - Proyek machine learning  
-    - Dashboard ML siap deploy  
+    ⚡ Desain premium, performa cepat, cocok untuk tugas kuliah maupun proyek ML!
     """)
 
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 # PAGE: PREDIKSI
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 elif page == "Prediksi":
     st.markdown('<div class="header">🧩 Prediksi Penumpang</div>', unsafe_allow_html=True)
-    st.write("---")
 
     if not model_loaded:
         st.error(f"Model gagal dimuat: {model_error}")
     else:
-        tab1, tab2 = st.tabs(["Manual Input", "Upload CSV"])
+        tab1, tab2 = st.tabs(["📥 Input Manual", "📤 Upload CSV"])
 
         # ---------------------- MANUAL INPUT ----------------------
         with tab1:
@@ -166,8 +196,10 @@ elif page == "Prediksi":
                     Cabin = st.text_input("Cabin", "B/0/0")
 
                 with col2:
-                    Destination = st.selectbox("Destination",
-                        ["TRAPPIST-1e","PSO J318.5-22","55 Cancri e","missing"])
+                    Destination = st.selectbox(
+                        "Destination",
+                        ["TRAPPIST-1e","PSO J318.5-22","55 Cancri e","missing"]
+                    )
                     Age = st.number_input("Age", 0, 120, 28)
                     VIP = st.selectbox("VIP", ["True","False","missing"])
 
@@ -176,9 +208,9 @@ elif page == "Prediksi":
                     FoodCourt = st.number_input("FoodCourt", 0.0)
                     ShoppingMall = st.number_input("ShoppingMall", 0.0)
                     Spa = st.number_input("Spa", 0.0)
-                    VRDeck = st.number_input("VRDeck", 0.0)   # ✅ VRDECK TETAP ADA
+                    VRDeck = st.number_input("VRDeck", 0.0)
 
-                submit = st.form_submit_button("Prediksi Sekarang")
+                submit = st.form_submit_button("🔮 Prediksi Sekarang")
 
             if submit:
                 data = {
@@ -192,11 +224,11 @@ elif page == "Prediksi":
                     "FoodCourt": FoodCourt,
                     "ShoppingMall": ShoppingMall,
                     "Spa": Spa,
-                    "VRDeck": VRDeck  # tetap diinput
+                    "VRDeck": VRDeck
                 }
 
                 df = pd.DataFrame([data])
-                st.write("### 🔍 Data Input")
+                st.write("### 📄 Data Input")
                 st.dataframe(df)
 
                 df_proc = simple_preprocess(df)
@@ -205,8 +237,8 @@ elif page == "Prediksi":
                 pred = model.predict(df_proc)[0]
                 proba = model.predict_proba(df_proc)[0]
 
-                st.success(f"### Hasil Prediksi: **{bool(pred)}**")
-                st.write("Probabilitas:", proba)
+                st.success(f"### 🎯 Hasil Prediksi: **{bool(pred)}**")
+                st.info(f"📊 Probabilitas: `{proba}`")
 
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -221,12 +253,12 @@ elif page == "Prediksi":
                 df = pd.read_csv(file)
                 st.dataframe(df.head())
 
-                if st.button("Prediksi CSV"):
+                if st.button("🚀 Prediksi CSV"):
                     df_proc = simple_preprocess(df)
                     df_proc = align_features(df_proc, model)
 
                     df["Transported"] = model.predict(df_proc).astype(bool)
-                    st.success("Prediksi CSV berhasil!")
+                    st.success("Prediksi CSV selesai!")
 
                     st.dataframe(df.head())
 
@@ -238,12 +270,11 @@ elif page == "Prediksi":
 
             st.markdown("</div>", unsafe_allow_html=True)
 
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 # ANALISIS DATA PAGE
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 elif page == "Analisis Data":
     st.markdown('<div class="header">📊 Analisis Data</div>', unsafe_allow_html=True)
-    st.write("---")
 
     file = st.file_uploader("Upload CSV", type="csv")
 
@@ -267,24 +298,29 @@ elif page == "Analisis Data":
 
         st.pyplot(fig)
 
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 # ABOUT PAGE
-# --------------------------------------------------------
+# -------------------------------------------------------------------
 else:
     st.markdown('<div class="header">📚 Dokumentasi</div>', unsafe_allow_html=True)
-    st.write("---")
 
     st.markdown("""
-    Aplikasi ini menggunakan model **CatBoost** untuk memprediksi apakah penumpang  
-    akan *Transported* berdasarkan fitur-fitur penting.
+    Aplikasi ini dibangun menggunakan:
+
+    - **CatBoostClassifier**
+    - Streamlit Modern UI
+    - Preprocessing otomatis
+    - Dashboard premium dark mode  
 
     Jalankan aplikasi dengan:
     ```
     streamlit run app.py
     ```
+
     Pastikan file model:
     ```
     catboost_high_accuracy.cbm
     ```
     berada satu folder dengan `app.py`.
     """)
+
