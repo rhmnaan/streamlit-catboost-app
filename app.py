@@ -78,6 +78,9 @@ def simple_preprocess(df: pd.DataFrame, fit_label_encoders: bool=False):
     """Very small preprocessing: fillna, encode simple categorical objects with LabelEncoder.
     This is a heuristic — for best results, apply the same preprocessing used in training."""
     df_proc = df.copy()
+    # Normalize column names: ensure no leading/trailing spaces
+    df_proc.columns = df_proc.columns.str.strip()
+
     # Fill numeric NA with column median
     for c in df_proc.select_dtypes(include=[np.number]).columns:
         try:
@@ -85,6 +88,7 @@ def simple_preprocess(df: pd.DataFrame, fit_label_encoders: bool=False):
         except Exception:
             median = 0
         df_proc[c] = df_proc[c].fillna(median)
+
     # Fill object NA with 'missing' and simple label encode
     for c in df_proc.select_dtypes(include=['object','category']).columns:
         df_proc[c] = df_proc[c].fillna('missing')
@@ -93,9 +97,11 @@ def simple_preprocess(df: pd.DataFrame, fit_label_encoders: bool=False):
             df_proc[c] = le.fit_transform(df_proc[c].astype(str))
         except Exception:
             df_proc[c] = df_proc[c].astype(str)
-    # Convert bool columns to int (CatBoost can handle bool but keep consistent)
+
+    # Convert bool columns to int (CatBoost handles bool, but keep consistent)
     for c in df_proc.select_dtypes(include=['bool']).columns:
         df_proc[c] = df_proc[c].astype(int)
+
     return df_proc
 
 def get_model_feature_names(cat_model):
@@ -104,7 +110,6 @@ def get_model_feature_names(cat_model):
     Returns list of feature names or None if not found.
     """
     try:
-        # attribute present in some versions
         if hasattr(cat_model, 'feature_names_'):
             fn = getattr(cat_model, 'feature_names_')
             if fn is not None:
@@ -113,7 +118,6 @@ def get_model_feature_names(cat_model):
         pass
 
     try:
-        # Another common API
         if hasattr(cat_model, 'get_feature_names'):
             try:
                 fn = cat_model.get_feature_names()
@@ -125,7 +129,6 @@ def get_model_feature_names(cat_model):
         pass
 
     try:
-        # Some CatBoost models expose .feature_names
         if hasattr(cat_model, 'feature_names'):
             fn = getattr(cat_model, 'feature_names')
             if fn is not None:
@@ -133,7 +136,6 @@ def get_model_feature_names(cat_model):
     except Exception:
         pass
 
-    # As a last attempt, try to read from model metadata if available
     try:
         if hasattr(cat_model, 'get_params'):
             params = cat_model.get_params()
@@ -186,7 +188,6 @@ def align_features(df: pd.DataFrame, model):
 try:
     model = load_model()
     model_loaded = True
-    # try to get feature names once for quick debug (not printing to avoid clutter)
     try:
         MODEL_FEATURE_NAMES = get_model_feature_names(model)
     except Exception:
@@ -208,9 +209,8 @@ if st.sidebar.checkbox("Tampilkan info model", value=False):
         st.sidebar.write("Model: catboost")
         st.sidebar.write(f"Model file: {MODEL_PATH}")
         if MODEL_FEATURE_NAMES is not None:
-            # show short preview of expected features (first 20)
             st.sidebar.write("Contoh fitur yang diharapkan (preview):")
-            st.sidebar.write(MODEL_FEATURE_NAMES[:40])
+            st.sidebar.write(MODEL_FEATURE_NAMES[:100])
     else:
         st.sidebar.error("Model belum dimuat. Pastikan file .cbm ada di repo root.")
 
@@ -255,23 +255,27 @@ elif page == "Prediksi":
     with tab1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown('<div class="section-title">Input Manual - 1 Penumpang</div>', unsafe_allow_html=True)
-        st.write('Masukkan fitur sesuai dataset. Sesuaikan nama kolom jika berbeda dari template.')
+        st.write('Masukkan fitur sesuai dataset. Jika model mengharapkan fitur lain, tambahkan di CSV atau ubah form.')
 
-        # Example form fields — user should adapt column names to actual dataset used
+        # Example form fields — diperluas agar tidak missing common features (Spa, VRDeck, dll.)
         with st.form(key='manual_form'):
             colA, colB, colC = st.columns(3)
             with colA:
                 HomePlanet = st.selectbox('HomePlanet', ['Earth','Europa','Mars','missing'])
                 CryoSleep = st.selectbox('CryoSleep', ['True','False','missing'])
                 Cabin = st.text_input('Cabin (as string)', value='B/0/0')
+                Deck = st.text_input('Deck (optional)', value='')
             with colB:
                 Destination = st.selectbox('Destination', ['TRAPPIST-1e','PSO J318.5-22','55 Cancri e','missing'])
                 Age = st.number_input('Age', min_value=0.0, max_value=120.0, value=30.0)
                 VIP = st.selectbox('VIP', ['True','False','missing'])
+                Side = st.text_input('Side (optional)', value='')
             with colC:
                 RoomService = st.number_input('RoomService', min_value=0.0, value=0.0)
                 FoodCourt = st.number_input('FoodCourt', min_value=0.0, value=0.0)
                 ShoppingMall = st.number_input('ShoppingMall', min_value=0.0, value=0.0)
+                Spa = st.number_input('Spa', min_value=0.0, value=0.0)
+                VRDeck = st.number_input('VRDeck', min_value=0.0, value=0.0)
 
             submit_manual = st.form_submit_button('Predict')
 
@@ -281,12 +285,16 @@ elif page == "Prediksi":
                 'HomePlanet': HomePlanet,
                 'CryoSleep': CryoSleep,
                 'Cabin': Cabin,
+                'Deck': Deck,
                 'Destination': Destination,
                 'Age': Age,
                 'VIP': VIP,
+                'Side': Side,
                 'RoomService': RoomService,
                 'FoodCourt': FoodCourt,
-                'ShoppingMall': ShoppingMall
+                'ShoppingMall': ShoppingMall,
+                'Spa': Spa,
+                'VRDeck': VRDeck
             }])
 
             st.write('Preview input:')
@@ -300,11 +308,11 @@ elif page == "Prediksi":
                 df_proc = align_features(df_proc, model)
             except Exception as e:
                 st.error(f'Gagal menyelaraskan fitur dengan model: {e}')
-                # still try to predict but likely to fail
+
+            # Predict
             try:
                 preds = model.predict(df_proc)
                 probs = None
-                # CatBoost predict_proba available for classifiers
                 try:
                     probs = model.predict_proba(df_proc)
                 except Exception:
