@@ -287,15 +287,21 @@ elif page == "Analisis Data":
             st.pyplot(fig)
 
         # Quick pair plot limited
-        if st.checkbox('Tampilkan pairplot (terbatas)'), st.write('Pairplot may be slow for large datasets'):
+        if st.checkbox('Tampilkan pairplot (terbatas)'):
+            st.write('Pairplot may be slow for large datasets')
+
             sample = df.sample(n=min(200, len(df)))
             sns = None
             try:
                 import seaborn as sns
-                sns.pairplot(sample.select_dtypes(include=[np.number]).dropna(axis=1), diag_kind='kde')
+                sns.pairplot(
+                    sample.select_dtypes(include=[np.number]).dropna(axis=1),
+                    diag_kind='kde'
+                )
                 st.pyplot(plt.gcf())
             except Exception as e:
-                st.error('Seaborn tidak tersedia atau terjadi error saat membuat pairplot: '+str(e))
+                st.error('Seaborn tidak tersedia atau terjadi error saat membuat pairplot: ' + str(e))
+
 
 # ---------------------------
 # SHAP explanation page
