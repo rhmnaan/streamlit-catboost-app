@@ -157,7 +157,7 @@ if page == "Home":
     st.markdown('<div class="header">🚀 CatBoost Spaceship Titanic</div>', unsafe_allow_html=True)
 
     st.markdown("""
-    ### 👋 Selamat datang di Dashboard Premium  
+    ### 👋 Selamat datang di Dashboard 
     Aplikasi ini menggunakan model **CatBoost** berakurasi tinggi untuk memprediksi  
     apakah penumpang *Spaceship Titanic* akan **Transported**.
 
