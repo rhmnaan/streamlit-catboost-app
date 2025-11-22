@@ -2,6 +2,6 @@ streamlit
 pandas
 numpy
 catboost
-matplotlib
 shap
-scikit-learn
+matplotlib
+seaborn
