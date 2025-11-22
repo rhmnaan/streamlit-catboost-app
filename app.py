@@ -168,7 +168,7 @@ if page == "Home":
     - Melihat analisis data  
     - Menjelajah dokumentasi
 
-    ⚡ Desain premium, performa cepat, cocok untuk tugas kuliah maupun proyek ML!
+    ⚡ By : Kelompok 3!
     """)
 
 # -------------------------------------------------------------------
