@@ -2,40 +2,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from catboost import CatBoostClassifier
-import seaborn as sns
-import shap
-import matplotlib.pyplot as plt
 
-# ==========================
-# CONFIGURASI APLIKASI
-# ==========================
-st.set_page_config(
-    page_title="Spaceship Titanic - CatBoost App",
-    page_icon="🚀",
-    layout="wide"
-)
+st.set_page_config(page_title="Spaceship Titanic", page_icon="🚀", layout="wide")
 
-# ==========================
-# CSS PREMIUM
-# ==========================
-st.markdown("""
-    <style>
-        .main-title {
-            font-size: 38px;
-            font-weight: 800;
-            text-align: center;
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            background: linear-gradient(90deg, #6a11cb, #2575fc);
-            margin-bottom: 30px;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# ==========================
+# -------------------------
 # LOAD MODEL
-# ==========================
+# -------------------------
 MODEL_PATH = "catboost_model.cbm"
 
 @st.cache_resource
@@ -46,161 +18,119 @@ def load_model():
 
 model = load_model()
 
-# ==========================
-# FUNGSI PREPROCESSING SESUAI TRAINING
-# ==========================
+# -------------------------
+# MAPPING SESUAI TRAINING
+# -------------------------
+map_HomePlanet = {"Earth": 0, "Mars": 1, "Europa": 2}
+map_Destination = {"TRAPPIST-1e": 0, "55 Cancri e": 1, "PSO J318.5-22": 2}
+map_Deck = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "T": 7}
+map_Side = {"P": 0, "S": 1}
+map_AgeGroup = {"Child": 0, "Teen": 1, "YoungAdult": 2, "Adult": 3, "Senior": 4}
 
-def extract_cabin_features(cabin):
-    try:
-        deck, num, side = cabin.split("/")
-        return deck, int(num), side
-    except:
-        return None, None, None
+# -------------------------
+# PREPROCESS
+# -------------------------
+def preprocess(df):
+    # Cabin processing
+    def split_cabin(c):
+        try:
+            deck, num, side = c.split("/")
+            deck = map_Deck.get(deck, -1)
+            side = map_Side.get(side, -1)
+            num = int(num)
+            return deck, num, side
+        except:
+            return -1, -1, -1
 
-def preprocess_input(df):
+    df["Deck"], df["CabinNum"], df["Side"] = zip(*df["Cabin"].apply(split_cabin))
 
-    # Cabin = Deck / CabinNum / Side
-    df["Deck"], df["CabinNum"], df["Side"] = zip(*df["Cabin"].apply(extract_cabin_features))
+    # Mapping kategori -> angka
+    df["HomePlanet"] = df["HomePlanet"].map(map_HomePlanet)
+    df["Destination"] = df["Destination"].map(map_Destination)
+    df["CryoSleep"] = df["CryoSleep"].astype(int)
+    df["VIP"] = df["VIP"].astype(int)
 
-    # GroupID → ambil angka dari CabinNum jika ada, kalau tidak → random
-    df["GroupID"] = df["CabinNum"].fillna(0).astype(int)
+    # GroupID = CabinNum
+    df["GroupID"] = df["CabinNum"].fillna(0)
 
-    # GroupSize → 1 (karena hanya input manual)
+    # GroupSize = 1 (manual input)
     df["GroupSize"] = 1
 
     # IsAlone
-    df["IsAlone"] = df["GroupSize"].apply(lambda x: 1 if x == 1 else 0)
+    df["IsAlone"] = (df["GroupSize"] == 1).astype(int)
 
-    # TotalSpendings
+    # Total Spendings
     df["TotalSpendings"] = (
-        df["RoomService"] +
-        df["FoodCourt"] +
-        df["ShoppingMall"] +
-        df["Spa"] +
-        df["VRDeck"]
+        df["RoomService"] + df["FoodCourt"] + df["ShoppingMall"] + df["Spa"] + df["VRDeck"]
     )
 
-    # log_TotalSpendings
     df["log_TotalSpendings"] = np.log1p(df["TotalSpendings"])
 
-    # CryoSleep_missing_flag
+    # CryoSleep missing flag
     df["CryoSleep_missing_flag"] = df["CryoSleep"].isna().astype(int)
 
-    # Age_Group
+    # Age group numeric
     def age_group(age):
-        if age < 12:
-            return "Child"
-        elif age < 18:
-            return "Teen"
-        elif age < 30:
-            return "YoungAdult"
-        elif age < 60:
-            return "Adult"
-        else:
-            return "Senior"
+        if age < 12: return 0
+        elif age < 18: return 1
+        elif age < 30: return 2
+        elif age < 60: return 3
+        else: return 4
 
     df["Age_Group"] = df["Age"].apply(age_group)
 
     return df
 
+# -------------------------
+# UI PREDIKSI
+# -------------------------
+st.title("🚀 Prediksi Penumpang Spaceship Titanic")
 
-# ==========================
-# MENU
-# ==========================
-menu = st.sidebar.radio(
-    "Navigasi",
-    ["🏠 Home", "🧍 Prediksi Manual", "📁 Prediksi File CSV"]
-)
+with st.form("form"):
+    col1, col2 = st.columns(2)
 
-# =====================================================================
-# HOME
-# =====================================================================
-if menu == "🏠 Home":
-    st.markdown('<div class="main-title">🚀 Spaceship Titanic – CatBoost Prediction App</div>', unsafe_allow_html=True)
+    with col1:
+        HomePlanet = st.selectbox("HomePlanet", ["Earth", "Mars", "Europa"])
+        CryoSleep = st.selectbox("CryoSleep", ["True", "False"])
+        Cabin = st.text_input("Cabin (format A/0/P)")
+        Destination = st.selectbox("Destination", ["TRAPPIST-1e", "55 Cancri e", "PSO J318.5-22"])
+        Age = st.number_input("Age", 0.0, 100.0, 30.0)
 
-    st.markdown("""
-    ### Aplikasi prediksi Spaceship Titanic menggunakan CatBoost  
-    Fitur:
-    - Prediksi manual
-    - Prediksi via CSV
-    """)
+    with col2:
+        VIP = st.selectbox("VIP", ["True", "False"])
+        RoomService = st.number_input("RoomService", 0.0, step=1.0)
+        FoodCourt = st.number_input("FoodCourt", 0.0, step=1.0)
+        ShoppingMall = st.number_input("ShoppingMall", 0.0, step=1.0)
+        Spa = st.number_input("Spa", 0.0, step=1.0)
+        VRDeck = st.number_input("VRDeck", 0.0, step=1.0)
 
-# =====================================================================
-# 🧍 PREDIKSI MANUAL
-# =====================================================================
-elif menu == "🧍 Prediksi Manual":
-    st.markdown('<div class="main-title">🧍 Prediksi Penumpang (Input Manual)</div>', unsafe_allow_html=True)
+    submit = st.form_submit_button("Prediksi 🚀")
 
-    with st.form("manual_form"):
-        col1, col2 = st.columns(2)
+if submit:
 
-        with col1:
-            HomePlanet = st.selectbox("HomePlanet", ["Earth", "Mars", "Europa"])
-            CryoSleep = st.selectbox("CryoSleep", ["True", "False"])
-            Cabin = st.text_input("Cabin (misal: B/0/P)")
-            Destination = st.selectbox("Destination", ["TRAPPIST-1e", "55 Cancri e", "PSO J318.5-22"])
-            Age = st.number_input("Age", min_value=0.0, max_value=100.0, value=30.0)
+    df = pd.DataFrame([{
+        "HomePlanet": HomePlanet,
+        "CryoSleep": 1 if CryoSleep == "True" else 0,
+        "Cabin": Cabin,
+        "Destination": Destination,
+        "Age": Age,
+        "VIP": 1 if VIP == "True" else 0,
+        "RoomService": RoomService,
+        "FoodCourt": FoodCourt,
+        "ShoppingMall": ShoppingMall,
+        "Spa": Spa,
+        "VRDeck": VRDeck
+    }])
 
-        with col2:
-            VIP = st.selectbox("VIP", ["True", "False"])
-            RoomService = st.number_input("RoomService", min_value=0.0, value=0.0)
-            FoodCourt = st.number_input("FoodCourt", min_value=0.0, value=0.0)
-            ShoppingMall = st.number_input("ShoppingMall", min_value=0.0, value=0.0)
-            Spa = st.number_input("Spa", min_value=0.0, value=0.0)
-            VRDeck = st.number_input("VRDeck", min_value=0.0, value=0.0)
+    df = preprocess(df)
 
-        submitted = st.form_submit_button("Prediksi 🚀")
+    try:
+        pred = model.predict(df)[0]
+        st.success(f"🚀 Hasil Prediksi: **{bool(pred)}**")
+    except Exception as e:
+        st.error("❌ Error pada prediksi.")
+        st.code(str(e))
 
-    if submitted:
-
-        input_df = pd.DataFrame([{
-            "HomePlanet": HomePlanet,
-            "CryoSleep": True if CryoSleep == "True" else False,
-            "Cabin": Cabin,
-            "Destination": Destination,
-            "Age": Age,
-            "VIP": True if VIP == "True" else False,
-            "RoomService": RoomService,
-            "FoodCourt": FoodCourt,
-            "ShoppingMall": ShoppingMall,
-            "Spa": Spa,
-            "VRDeck": VRDeck
-        }])
-
-        # Preprocessing otomatis
-        input_df = preprocess_input(input_df)
-
-        try:
-            pred = model.predict(input_df)[0]
-            st.success(f"🚀 Hasil Prediksi: **{bool(pred)}**")
-        except Exception as e:
-            st.error("❌ Error pada prediksi.")
-            st.code(str(e))
-
-# =====================================================================
-# 📁 PREDIKSI CSV
-# =====================================================================
-elif menu == "📁 Prediksi File CSV":
-    st.markdown('<div class="main-title">📁 Prediksi Banyak Data (CSV)</div>', unsafe_allow_html=True)
-
-    file = st.file_uploader("Upload file CSV", type=["csv"])
-
-    if file:
-        df = pd.read_csv(file)
-        df = preprocess_input(df)
-
-        try:
-            preds = model.predict(df)
-            df["Transported"] = preds.astype(bool)
-
-            st.dataframe(df)
-
-            csv = df.to_csv(index=False).encode("utf-8")
-            st.download_button("Download Hasil CSV", csv, "prediction_output.csv")
-
-        except Exception as e:
-            st.error("❌ Error prediksi CSV.")
-            st.code(str(e))
 
 # =====================================================================
 # 📊 ANALISIS DATA
