@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from catboost import CatBoostClassifier
-import seaborn as sns
-import shap
 import matplotlib.pyplot as plt
 
 # ==========================
@@ -43,7 +41,7 @@ st.markdown("""
 # ==========================
 # LOAD MODEL
 # ==========================
-MODEL_PATH = "catboost_model.cbm"
+MODEL_PATH = "/mnt/data/catboost_high_accuracy.cbm"
 
 @st.cache_resource
 def load_model():
@@ -53,33 +51,38 @@ def load_model():
 
 model = load_model()
 
+# ==========================
+# KOLOM WAJIB SESUAI MODEL
+# ==========================
+REQUIRED_COLUMNS = [
+    "HomePlanet", "CryoSleep", "Cabin", "Destination", "Age", "VIP",
+    "RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck"
+]
 
 # ==========================
 # MENU
 # ==========================
 menu = st.sidebar.radio(
     "Navigasi",
-    ["🏠 Home", "🧍 Prediksi Manual", "📁 Prediksi File CSV", "📊 Analisis Data", "📘 Dokumentasi Model"]
+    ["🏠 Home", "🧍 Prediksi Manual", "📁 Prediksi File CSV"]
 )
 
 # =====================================================================
 # HOME
 # =====================================================================
 if menu == "🏠 Home":
-    st.markdown('<div class="main-title">🚀 Spaceship Titanic – CatBoost Prediction App</div>', 
-                 unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🚀 Spaceship Titanic – CatBoost Prediction App</div>',
+                unsafe_allow_html=True)
 
     st.markdown("""
     ### Aplikasi prediksi Spaceship Titanic menggunakan CatBoost  
     Fitur:
     - Prediksi manual
-    - Prediksi via CSV
-    - Analisis dataset
-    - SHAP model interpretation
+    - Prediksi via CSV  
     """)
 
 # =====================================================================
-# 🧍 PREDIKSI MANUAL (INPUT SESUAI PERMINTAAN)
+# 🧍 PREDIKSI MANUAL
 # =====================================================================
 elif menu == "🧍 Prediksi Manual":
     st.markdown('<div class="main-title">🧍 Prediksi Penumpang (Input Manual)</div>', unsafe_allow_html=True)
@@ -92,12 +95,11 @@ elif menu == "🧍 Prediksi Manual":
             HomePlanet = st.selectbox("HomePlanet", ["Earth", "Mars", "Europa"])
             CryoSleep = st.selectbox("CryoSleep", ["True", "False"])
             Cabin = st.text_input("Cabin (misal B/0/P)")
-            Destination = st.selectbox("Destination", [
-                "TRAPPIST-1e",
-                "55 Cancri e",
-                "PSO J318.5-22"
-            ])
-            Age = st.number_input("Age", min_value=0.0, max_value=100.0, value=30.0)
+            Destination = st.selectbox(
+                "Destination",
+                ["TRAPPIST-1e", "55 Cancri e", "PSO J318.5-22"]
+            )
+            Age = st.number_input("Age", min_value=0, max_value=100, value=30)
 
         with col2:
             VIP = st.selectbox("VIP", ["True", "False"])
@@ -111,26 +113,20 @@ elif menu == "🧍 Prediksi Manual":
 
     if submitted:
 
-        # UBAH BOOLEAN KE FORMAT ASLI
-        CryoSleep_bool = True if CryoSleep == "True" else False
-        VIP_bool = True if VIP == "True" else False
-
-        # ==== SESUAIKAN DENGAN KOLOM TRAINING MODEL ====
         input_df = pd.DataFrame([{
             "HomePlanet": HomePlanet,
-            "CryoSleep": CryoSleep_bool,
+            "CryoSleep": CryoSleep == "True",
             "Cabin": Cabin,
             "Destination": Destination,
-            "Age": Age,
-            "VIP": VIP_bool,
-            "RoomService": RoomService,
-            "FoodCourt": FoodCourt,
-            "ShoppingMall": ShoppingMall,
-            "Spa": Spa,
-            "VRDeck": VRDeck
+            "Age": float(Age),
+            "VIP": VIP == "True",
+            "RoomService": float(RoomService),
+            "FoodCourt": float(FoodCourt),
+            "ShoppingMall": float(ShoppingMall),
+            "Spa": float(Spa),
+            "VRDeck": float(VRDeck),
         }])
 
-        # ========== PREDIKSI ==========
         try:
             pred = model.predict(input_df)[0]
             st.success(f"🚀 Hasil Prediksi: **{bool(pred)}**")
@@ -138,6 +134,40 @@ elif menu == "🧍 Prediksi Manual":
         except Exception as e:
             st.error("❌ Error pada prediksi. Periksa kolom dan tipe data.")
             st.code(str(e))
+
+# =====================================================================
+# 📁 PREDIKSI CSV
+# =====================================================================
+elif menu == "📁 Prediksi File CSV":
+    st.markdown('<div class="main-title">📁 Prediksi Banyak Data (CSV)</div>', unsafe_allow_html=True)
+
+    file = st.file_uploader("Upload file CSV", type=["csv"])
+
+    if file:
+        df = pd.read_csv(file)
+        st.write("### Data yang diupload")
+        st.dataframe(df.head())
+
+        # CEK APAKAH KOLUM SESUAI
+        missing_cols = [col for col in REQUIRED_COLUMNS if col not in df.columns]
+
+        if missing_cols:
+            st.error(f"❌ CSV tidak valid. Kolom berikut hilang:\n{missing_cols}")
+        else:
+            try:
+                preds = model.predict(df)
+                df["Transported"] = preds.astype(bool)
+
+                st.write("### Hasil Prediksi")
+                st.dataframe(df)
+
+                csv = df.to_csv(index=False).encode("utf-8")
+                st.download_button("Download Hasil CSV", csv, "prediction_output.csv")
+
+            except Exception as e:
+                st.error("❌ Error pada prediksi CSV.")
+                st.code(str(e))
+
 
 
 # =====================================================================
