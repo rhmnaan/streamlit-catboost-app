@@ -168,7 +168,7 @@ if page == "Home":
     - Melihat analisis data  
     - Menjelajah dokumentasi
 
-    ⚡ By : Kelompok 3!
+    ⚡ By : Kelompok 3
     """)
 
 # -------------------------------------------------------------------
