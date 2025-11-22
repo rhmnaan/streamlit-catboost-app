@@ -74,26 +74,111 @@ def load_sample_data():
     # small helper: return empty template or sample
     return None
 
-# Simple preprocessing placeholder (user should adapt to their preprocessing used in training)
-# For many CatBoost models, categorical features can be left as-is, but for safety we try label-encoding simple object columns
-
 def simple_preprocess(df: pd.DataFrame, fit_label_encoders: bool=False):
     """Very small preprocessing: fillna, encode simple categorical objects with LabelEncoder.
     This is a heuristic — for best results, apply the same preprocessing used in training."""
     df_proc = df.copy()
     # Fill numeric NA with column median
     for c in df_proc.select_dtypes(include=[np.number]).columns:
-        df_proc[c] = df_proc[c].fillna(df_proc[c].median())
-    # Fill object NA with 'missing'
+        try:
+            median = df_proc[c].median()
+        except Exception:
+            median = 0
+        df_proc[c] = df_proc[c].fillna(median)
+    # Fill object NA with 'missing' and simple label encode
     for c in df_proc.select_dtypes(include=['object','category']).columns:
         df_proc[c] = df_proc[c].fillna('missing')
-        # apply label encoding
         le = LabelEncoder()
         try:
             df_proc[c] = le.fit_transform(df_proc[c].astype(str))
         except Exception:
             df_proc[c] = df_proc[c].astype(str)
+    # Convert bool columns to int (CatBoost can handle bool but keep consistent)
+    for c in df_proc.select_dtypes(include=['bool']).columns:
+        df_proc[c] = df_proc[c].astype(int)
     return df_proc
+
+def get_model_feature_names(cat_model):
+    """
+    Try multiple ways to extract feature names from CatBoost model object.
+    Returns list of feature names or None if not found.
+    """
+    try:
+        # attribute present in some versions
+        if hasattr(cat_model, 'feature_names_'):
+            fn = getattr(cat_model, 'feature_names_')
+            if fn is not None:
+                return list(fn)
+    except Exception:
+        pass
+
+    try:
+        # Another common API
+        if hasattr(cat_model, 'get_feature_names'):
+            try:
+                fn = cat_model.get_feature_names()
+                if fn is not None:
+                    return list(fn)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    try:
+        # Some CatBoost models expose .feature_names
+        if hasattr(cat_model, 'feature_names'):
+            fn = getattr(cat_model, 'feature_names')
+            if fn is not None:
+                return list(fn)
+    except Exception:
+        pass
+
+    # As a last attempt, try to read from model metadata if available
+    try:
+        if hasattr(cat_model, 'get_params'):
+            params = cat_model.get_params()
+            if isinstance(params, dict) and 'feature_names' in params:
+                return list(params['feature_names'])
+    except Exception:
+        pass
+
+    return None
+
+def align_features(df: pd.DataFrame, model):
+    """
+    Ensure df has columns in the same names & order expected by the model.
+    - If model exposes expected feature names, add missing columns with NaN and drop extras.
+    - If not, returns df unchanged but warns user.
+    """
+    if model is None:
+        # No model loaded, nothing to align
+        return df
+
+    expected = None
+    try:
+        expected = get_model_feature_names(model)
+    except Exception:
+        expected = None
+
+    if expected is None:
+        # can't determine expected names
+        st.warning("Tidak dapat membaca daftar fitur dari model. Pastikan kolom input sesuai urutan yang dipakai saat training.")
+        return df
+
+    # Add missing columns with NaN
+    missing = [c for c in expected if c not in df.columns]
+    for c in missing:
+        df[c] = np.nan
+
+    # Drop extras not expected by model
+    extra = [c for c in df.columns if c not in expected]
+    if extra:
+        df = df.drop(columns=extra)
+
+    # Reorder to expected
+    df = df[expected].copy()
+
+    return df
 
 # ---------------------------
 # Load model (on startup)
@@ -101,21 +186,31 @@ def simple_preprocess(df: pd.DataFrame, fit_label_encoders: bool=False):
 try:
     model = load_model()
     model_loaded = True
+    # try to get feature names once for quick debug (not printing to avoid clutter)
+    try:
+        MODEL_FEATURE_NAMES = get_model_feature_names(model)
+    except Exception:
+        MODEL_FEATURE_NAMES = None
 except Exception as e:
     model_loaded = False
     model = None
     model_load_error = str(e)
+    MODEL_FEATURE_NAMES = None
 
 # ---------------------------
 # App layout (sidebar navigation)
 # ---------------------------
 st.sidebar.markdown("# ⚙️ Menu")
-page = st.sidebar.radio("Pilih Halaman:", ["Home", "Prediksi", "Analisis Data", "SHAP", "Dokumentasi / About"]) 
+page = st.sidebar.radio("Pilih Halaman:", ["Home", "Prediksi", "Analisis Data", "SHAP", "Dokumentasi / About"])
 st.sidebar.markdown("---")
 if st.sidebar.checkbox("Tampilkan info model", value=False):
     if model_loaded:
         st.sidebar.write("Model: catboost")
         st.sidebar.write(f"Model file: {MODEL_PATH}")
+        if MODEL_FEATURE_NAMES is not None:
+            # show short preview of expected features (first 20)
+            st.sidebar.write("Contoh fitur yang diharapkan (preview):")
+            st.sidebar.write(MODEL_FEATURE_NAMES[:40])
     else:
         st.sidebar.error("Model belum dimuat. Pastikan file .cbm ada di repo root.")
 
@@ -199,6 +294,13 @@ elif page == "Prediksi":
 
             # Preprocess
             df_proc = simple_preprocess(df_manual)
+
+            # Align features to what model expects
+            try:
+                df_proc = align_features(df_proc, model)
+            except Exception as e:
+                st.error(f'Gagal menyelaraskan fitur dengan model: {e}')
+                # still try to predict but likely to fail
             try:
                 preds = model.predict(df_proc)
                 probs = None
@@ -236,6 +338,10 @@ elif page == "Prediksi":
             if st.button('Run Batch Prediction'):
                 with st.spinner('Running predictions...'):
                     df_proc = simple_preprocess(df_test)
+                    try:
+                        df_proc = align_features(df_proc, model)
+                    except Exception as e:
+                        st.warning('Warning saat menyelaraskan fitur: ' + str(e))
                     try:
                         preds = model.predict(df_proc)
                         df_out = df_test.copy()
@@ -324,8 +430,13 @@ elif page == "SHAP":
             sample_df = df.sample(n=min(sample_n, len(df)))
             st.write('Menggunakan sample background berukuran', len(sample_df))
 
-            # preprocess
+            # preprocess & align
             X = simple_preprocess(sample_df)
+            try:
+                X = align_features(X, model)
+            except Exception:
+                st.warning('Gagal menyelaraskan fitur untuk SHAP sample. Melanjutkan dengan kolom yang ada.')
+
             explainer = shap.TreeExplainer(model)
             with st.spinner('Menghitung SHAP values...'):
                 shap_values = explainer.shap_values(X)
@@ -350,7 +461,13 @@ elif page == "SHAP":
             idx = st.number_input('Pilih index sample (0..n-1)', min_value=0, max_value=len(X)-1, value=0)
             # show force plot
             try:
-                shap_html = shap.force_plot(explainer.expected_value, shap_values[idx,:], X.iloc[idx,:], matplotlib=False)
+                # handle shap outputs gracefully
+                if isinstance(shap_values, list):
+                    # multiclass: shap_values is list (n_classes x n_samples x n_features)
+                    sv = shap_values[0]  # use first class for visualization (user may change)
+                    shap_html = shap.force_plot(explainer.expected_value[0], sv[idx,:], X.iloc[idx,:], matplotlib=False)
+                else:
+                    shap_html = shap.force_plot(explainer.expected_value, shap_values[idx,:], X.iloc[idx,:], matplotlib=False)
                 st.components.v1.html(shap_html.html(), height=400)
             except Exception as e:
                 st.error('Gagal menampilkan force plot: '+str(e))
@@ -375,5 +492,3 @@ elif page == "Dokumentasi / About":
 # ---------------------------
 # End of file
 # ---------------------------
-
-# Waiting for next message to insert full code.
