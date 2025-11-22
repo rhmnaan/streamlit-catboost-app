@@ -1,7 +1,6 @@
-streamlit
-pandas
-numpy
-catboost
-shap
-matplotlib
-seaborn
+streamlit==1.39.0
+pandas==2.2.2
+numpy==1.26.4
+catboost==1.2.5
+scikit-learn==1.5.1
+python-dateutil==2.9.0.post0
