@@ -1,4 +1,7 @@
 streamlit
-catboost
 pandas
 numpy
+catboost
+shap
+matplotlib
+seaborn
