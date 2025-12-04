@@ -166,7 +166,6 @@ if page == "Home":
     - Melakukan prediksi dari satu data penumpang  
     - Melakukan prediksi massal dari file CSV  
     - Melihat analisis data  
-    - Menjelajah dokumentasi
 
     ⚡ By : Kelompok 3
     """)
