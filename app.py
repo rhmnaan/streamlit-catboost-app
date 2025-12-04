@@ -247,7 +247,7 @@ elif page == "Prediksi":
             st.markdown('<div class="card">', unsafe_allow_html=True)
             st.markdown('<div class="section-title">Upload CSV</div>', unsafe_allow_html=True)
 
-            file = st.file_uploader("Upload CSV", type="csv")
+            file = st.file_uploader("Upload file test.csv", type="csv")
 
             if file:
                 df = pd.read_csv(file)
