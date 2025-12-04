@@ -15,21 +15,24 @@ def load_custom_css():
     st.markdown("""
     <style>
 
-    /* ================================ */
-    /* GLOBAL THEME – PROFESSIONAL DARK */
-    /* ================================ */
+    /* ======================================================= */
+    /* STREAMLIT CLOUD PRO – PREMIUM UI THEME (DARK MODE)     */
+    /* ======================================================= */
 
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     :root {
-        --bg: #0b0f19;
-        --bg2: #111726;
-        --card: rgba(255, 255, 255, 0.05);
-        --card2: rgba(255, 255, 255, 0.08);
-        --text: #e6edf3;
-        --muted: #94a3b8;
-        --accent: #3b82f6;
-        --accent2: #60a5fa;
+        --bg: #0C111C;
+        --bg2: #111827;
+        --glass: rgba(255, 255, 255, 0.04);
+        --glass2: rgba(255, 255, 255, 0.07);
+
+        --text: #E2E8F0;
+        --muted: #94A3B8;
+
+        --primary: #4F8BFF;
+        --primary2: #7AB6FF;
+        --danger: #EF4444;
     }
 
     html, body, .stApp {
@@ -39,98 +42,194 @@ def load_custom_css():
     }
 
     /* ============================= */
-    /* HEADER – GLASS + BLUE AURORA */
+    /* SIDEBAR – CLOUD PRO DESIGN   */
+    /* ============================= */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0F172A, #0A0F1D);
+        border-right: 1px solid rgba(255,255,255,0.06);
+        padding-top: 20px;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.25);
+    }
+
+    .sidebar-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 20px;
+        padding-left: 6px;
+    }
+
+    /* Radio button styling */
+    .stRadio > div { 
+        gap: 12px;
+    }
+
+    /* ============================= */
+    /* HEADER – CLOUD PRO BANNER    */
     /* ============================= */
     .header {
-        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-        padding: 22px 28px;
-        border-radius: 18px;
-        color: white;
+        padding: 18px 26px;
+        background: linear-gradient(135deg, #2563EB, #3B82F6);
+        border-radius: 14px;
+        color: white !important;
         font-weight: 700;
-        font-size: 25px;
-        box-shadow: 0px 8px 25px rgba(0,0,0,0.55);
+        font-size: 26px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
         margin-bottom: 25px;
         letter-spacing: 0.3px;
     }
 
     /* ============================= */
-    /* CARDS – GLASS PREMIUM LOOK    */
+    /* CARD – GLASS CLOUD PRO       */
     /* ============================= */
     .card {
-        background: var(--card);
-        padding: 25px;
-        border-radius: 20px;
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        transition: 0.2s ease-in-out;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        background: var(--glass);
+        padding: 26px;
+        border-radius: 18px;
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255,255,255,0.07);
+        transition: 0.20s ease;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+        margin-bottom: 18px;
     }
 
     .card:hover {
-        background: var(--card2);
         transform: translateY(-3px);
-        box-shadow: 0 18px 35px rgba(0,0,0,0.55);
+        background: var(--glass2);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.55);
     }
 
     /* ============================= */
-    /* TITLES */
+    /* SECTION TITLE                */
     /* ============================= */
     .section-title {
-        font-size: 19px;
+        font-size: 20px;
+        color: var(--primary2);
         font-weight: 600;
-        color: var(--accent2);
-        margin-bottom: 14px;
+        margin-bottom: 16px;
     }
 
     /* ============================= */
-    /* SIDEBAR MODERN */
+    /* BUTTON – ELEVATED PRO        */
     /* ============================= */
-    section[data-testid="stSidebar"] {
-        background: #0e1423 !important;
-        border-right: 1px solid #1f2937 !important;
-        padding-top: 20px;
-    }
-
-    .sidebar-title {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--accent);
-        padding-bottom: 12px;
-        margin-top: 10px;
-    }
-
-    /* ============================= */
-    /* BUTTON – PREMIUM GRADIENT */
-    /* ============================= */
-    .stButton>button {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: white;
+    .stButton > button {
+        background: linear-gradient(135deg, #4F8BFF, #2563EB);
         border: none;
-        padding: 10px 20px;
+        padding: 10px 22px;
         border-radius: 12px;
+        color: white;
         font-weight: 600;
-        transition: 0.2s;
+        transition: 0.20s ease-in-out;
+        box-shadow: 0 4px 14px rgba(0, 89, 255, 0.35);
     }
 
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #7AB6FF, #4F8BFF);
         transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0, 89, 255, 0.45);
+    }
+
+    .stButton > button:active {
+        transform: scale(0.98);
     }
 
     /* ============================= */
-    /* INPUT FIELDS – CLEAN LOOK */
+    /* TABS – STREAMLIT PRO         */
     /* ============================= */
-    .stTextInput>div>div>input,
-    .stNumberInput>div>div>input,
-    .stSelectbox>div div {
-        background-color: #1b2333 !important;
-        color: var(--text) !important;
+    div[data-baseweb="tab-list"] {
+        gap: 10px !important;
+        background: transparent !important;
+        margin-bottom: 10px;
+    }
+
+    button[data-baseweb="tab"] {
+        background: var(--glass);
+        padding: 10px 18px;
+        border-radius: 12px;
+        color: var(--text);
+        border: 1px solid rgba(255,255,255,0.07);
+        transition: 0.20s ease;
+    }
+
+    button[data-baseweb="tab"]:hover {
+        background: var(--glass2);
+    }
+
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background: var(--primary);
+        border-color: var(--primary2);
+        font-weight: 600;
+        color: white !important;
+        box-shadow: 0 5px 14px rgba(0,89,255,0.45);
+    }
+
+    /* ============================= */
+    /* INPUT FIELDS                  */
+    /* ============================= */
+    input, textarea, select {
+        background: #1A2332 !important;
         border-radius: 10px !important;
-        border: 1px solid #273244 !important;
+        border: 1px solid #2C374C !important;
+        color: var(--text) !important;
+        padding: 6px 12px !important;
+    }
+
+    input:focus, select:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 1px var(--primary) !important;
+    }
+
+    /* ============================= */
+    /* DATAFRAME                    */
+    /* ============================= */
+    .stDataFrame div {
+        color: var(--text) !important;
+    }
+
+    .stDataFrame table {
+        background: rgba(255,255,255,0.03) !important;
+        border-radius: 12px !important;
+    }
+
+    thead tr th {
+        background: rgba(255,255,255,0.05) !important;
+        font-weight: 600 !important;
+    }
+
+    tbody tr:hover {
+        background: rgba(255,255,255,0.06) !important;
+    }
+
+    /* ============================= */
+    /* FILE UPLOADER                 */
+    /* ============================= */
+    .uploadedFile {
+        background: #1A2332 !important;
+        border-radius: 12px !important;
+        padding: 12px;
+        border: 1px dashed #334155 !important;
+    }
+
+    /* ============================= */
+    /* SCROLLBAR (SEXY)              */
+    /* ============================= */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0F172A;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #1E293B;
+        border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #334155;
     }
 
     </style>
     """, unsafe_allow_html=True)
+
 
 
 load_custom_css()
