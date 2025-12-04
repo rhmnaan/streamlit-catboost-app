@@ -15,69 +15,123 @@ def load_custom_css():
     st.markdown("""
     <style>
 
-    /* GLOBAL COLOR VARIABLES */
-    :root { 
-        --bg: #0d1117; 
-        --card: #161b22; 
-        --card-hover: #1c2330;
-        --text: #e6edf3; 
-        --muted: #8b949e; 
-        --accent: #58a6ff;
+    /* ================================ */
+    /* GLOBAL THEME – PROFESSIONAL DARK */
+    /* ================================ */
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+    :root {
+        --bg: #0b0f19;
+        --bg2: #111726;
+        --card: rgba(255, 255, 255, 0.05);
+        --card2: rgba(255, 255, 255, 0.08);
+        --text: #e6edf3;
+        --muted: #94a3b8;
+        --accent: #3b82f6;
+        --accent2: #60a5fa;
     }
 
-    .stApp { background-color: var(--bg); color: var(--text); }
-
-    /* HEADER STYLE */
-    .header {
-        background: linear-gradient(90deg, #3b82f6, #1e40af);
-        padding: 18px; 
-        border-radius: 14px; 
-        color: white; 
-        font-weight: 700; 
-        text-align: left;
-        font-size: 23px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
-        margin-bottom: 20px;
-    }
-
-    /* CARD STYLE */
-    .card {
-        background: var(--card); 
-        padding: 22px; 
-        border-radius: 16px; 
-        border: 1px solid #21262d;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.45);
-        transition: all 0.2s ease;
-    }
-    .card:hover {
-        background: var(--card-hover);
-        box-shadow: 0 14px 32px rgba(0,0,0,0.55);
-    }
-
-    /* SECTION TITLE */
-    .section-title {
-        color: var(--accent);
-        font-weight: 600;
-        font-size: 18px;
-        margin-bottom: 10px;
-    }
-
-    /* SIDEBAR */
-    .css-1d391kg, .css-1lcbmhc {
-        background-color: #11161d !important;
-        border-right: 1px solid #1f2937 !important;
+    html, body, .stApp {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg) !important;
         color: var(--text) !important;
     }
 
+    /* ============================= */
+    /* HEADER – GLASS + BLUE AURORA */
+    /* ============================= */
+    .header {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        padding: 22px 28px;
+        border-radius: 18px;
+        color: white;
+        font-weight: 700;
+        font-size: 25px;
+        box-shadow: 0px 8px 25px rgba(0,0,0,0.55);
+        margin-bottom: 25px;
+        letter-spacing: 0.3px;
+    }
+
+    /* ============================= */
+    /* CARDS – GLASS PREMIUM LOOK    */
+    /* ============================= */
+    .card {
+        background: var(--card);
+        padding: 25px;
+        border-radius: 20px;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: 0.2s ease-in-out;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+
+    .card:hover {
+        background: var(--card2);
+        transform: translateY(-3px);
+        box-shadow: 0 18px 35px rgba(0,0,0,0.55);
+    }
+
+    /* ============================= */
+    /* TITLES */
+    /* ============================= */
+    .section-title {
+        font-size: 19px;
+        font-weight: 600;
+        color: var(--accent2);
+        margin-bottom: 14px;
+    }
+
+    /* ============================= */
+    /* SIDEBAR MODERN */
+    /* ============================= */
+    section[data-testid="stSidebar"] {
+        background: #0e1423 !important;
+        border-right: 1px solid #1f2937 !important;
+        padding-top: 20px;
+    }
+
     .sidebar-title {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 700;
         color: var(--accent);
-        padding-bottom: 10px;
+        padding-bottom: 12px;
+        margin-top: 10px;
+    }
+
+    /* ============================= */
+    /* BUTTON – PREMIUM GRADIENT */
+    /* ============================= */
+    .stButton>button {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    .stButton>button:hover {
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        transform: translateY(-2px);
+    }
+
+    /* ============================= */
+    /* INPUT FIELDS – CLEAN LOOK */
+    /* ============================= */
+    .stTextInput>div>div>input,
+    .stNumberInput>div>div>input,
+    .stSelectbox>div div {
+        background-color: #1b2333 !important;
+        color: var(--text) !important;
+        border-radius: 10px !important;
+        border: 1px solid #273244 !important;
     }
 
     </style>
     """, unsafe_allow_html=True)
+
 
 load_custom_css()
 
