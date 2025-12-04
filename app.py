@@ -256,7 +256,6 @@ elif page == "Prediksi":
                 </div>
                 """, unsafe_allow_html=True)
 
-                st.success(f"### 🎯 Hasil Prediksi: **{bool(pred)}**")
                 st.info(f"📊 Probabilitas: {proba}")
 
             st.markdown("</div>", unsafe_allow_html=True)
