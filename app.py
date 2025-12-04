@@ -235,6 +235,29 @@ elif page == "Prediksi":
 
                 pred = model.predict(df_proc)[0]
                 proba = model.predict_proba(df_proc)[0]
+                
+                pred_bool = bool(pred)
+
+                # Warna berdasarkan hasil prediksi
+                if pred_bool:
+                    label_color = "green"
+                    label_text = "TRUE – Penumpang *Transported* 🚀"
+                else:
+                    label_color = "red"
+                    label_text = "FALSE – Penumpang *Tidak Transported* ❌"
+
+                # TAMPILKAN HASIL
+                st.markdown(f"""
+                <div style='padding:15px; border-radius:10px; 
+                            background-color:{label_color}; 
+                            color:white; font-size:20px; font-weight:bold; 
+                            text-align:center;'>
+                    {label_text}
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Probabilitas
+                st.info(f"📊 Probabilitas (0 = Tidak, 1 = Ya): {proba}")
 
                 st.success(f"### 🎯 Hasil Prediksi: **{bool(pred)}**")
                 st.info(f"📊 Probabilitas: {proba}")
