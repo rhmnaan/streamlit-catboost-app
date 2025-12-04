@@ -148,7 +148,7 @@ except Exception as e:
 st.sidebar.markdown("<div class='sidebar-title'>⚙️ Menu Navigasi</div>", unsafe_allow_html=True)
 
 page = st.sidebar.radio("Pilih Halaman:", 
-                        ["Home", "Prediksi", "Analisis Data", "Dokumentasi / About"])
+                        ["Home", "Prediksi", "Analisis Data"])
 
 # -------------------------------------------------------------------
 # HOME PAGE
@@ -297,30 +297,3 @@ elif page == "Analisis Data":
             plt.xticks(rotation=45)
 
         st.pyplot(fig)
-
-# -------------------------------------------------------------------
-# ABOUT PAGE
-# -------------------------------------------------------------------
-else:
-    st.markdown('<div class="header">📚 Dokumentasi</div>', unsafe_allow_html=True)
-
-    st.markdown("""
-    Aplikasi ini dibangun menggunakan:
-
-    - **CatBoostClassifier**
-    - Streamlit Modern UI
-    - Preprocessing otomatis
-    - Dashboard premium dark mode  
-
-    Jalankan aplikasi dengan:
-    ```
-    streamlit run app.py
-    ```
-
-    Pastikan file model:
-    ```
-    catboost_high_accuracy.cbm
-    ```
-    berada satu folder dengan `app.py`.
-    """)
-
