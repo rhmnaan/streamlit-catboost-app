@@ -276,7 +276,7 @@ elif page == "Prediksi":
 elif page == "Analisis Data":
     st.markdown('<div class="header">📊 Analisis Data</div>', unsafe_allow_html=True)
 
-    file = st.file_uploader("Upload CSV", type="csv")
+    file = st.file_uploader("Upload file test.csv", type="csv")
 
     if file:
         df = pd.read_csv(file)
